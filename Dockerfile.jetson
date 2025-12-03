@@ -1,0 +1,22 @@
+FROM vllm:r36.4.tegra-aarch64-cu126-22.04 AS build
+
+# Install ccache
+RUN apt-get update && apt-get install -y ccache
+ENV CCACHE_DIR=/root/.ccache
+ENV PATH="/usr/lib/ccache:$PATH"
+
+WORKDIR /sdcpp
+
+COPY . .
+
+RUN --mount=type=cache,target=/root/.ccache \
+    mkdir -p build && \
+    cd build && \
+    cmake .. -DSD_CUDA=ON && \
+    cmake --build . --config Release --parallel
+
+FROM registry.lazycat.cloud/x/l4t-jetpack:8539b88-runtime AS runtime
+
+COPY --from=build /sdcpp/build/bin/* /usr/bin/
+
+CMD [ "/usr/bin/sd" ]
