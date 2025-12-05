@@ -30,11 +30,18 @@ build: sync-to-gpu
 inspect: sync-to-gpu
 	ssh -t $(REMOTE) "cd $(REMOTE_PATH) && \
 	docker run -it --rm \
+	--name sdcpp-inspect \
 	-v .:/opt/sdcpp \
 	-v $(REMOTE_PATH)/../lzc-aipod-imagen:/opt/lzc-aipod-imagen \
 	--network=host \
 	$(DOCKER_REGISTRY):$(VERSION) \
 	bash"
+
+copy:
+	ssh -t $(REMOTE) "cd $(REMOTE_PATH) && \
+		docker cp sdcpp-inspect:/usr/bin/sd ./sd"
+	rsync -a $(REMOTE):$(REMOTE_PATH)/sd ./sd && \
+	mv ./sd ../lzc-aipod-imagen/models/
 
 push: build
 	ssh -t $(REMOTE) "cd $(REMOTE_PATH) && \
